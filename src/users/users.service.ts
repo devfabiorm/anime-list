@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Role } from 'src/auth/role.enum';
+import { Permission } from 'src/enums/permission.enum';
+import { Role } from 'src/enums/role.enum';
 import { User } from './user';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class UsersService {
       username: 'maria',
       password: 'guess',
       roles: [Role.User],
+      permissions: [Permission.EDIT_USER],
     },
   ];
 
@@ -25,5 +27,11 @@ export class UsersService {
 
   public create(user: any): void {
     this.users.push(user);
+  }
+
+  public updatePassword(userId: number, password: string): User {
+    const user = this.users.find((user: User) => user.userId === userId);
+    user.password = password;
+    return user;
   }
 }

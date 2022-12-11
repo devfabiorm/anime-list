@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Request,
   UseGuards,
@@ -9,9 +10,13 @@ import {
 import { AuthService } from 'src/auth/auth.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { LocalAuthGuard } from 'src/auth/local-auth.guard';
-import { Role } from 'src/auth/role.enum';
+import { RequirePermissions } from 'src/auth/require-permissions.decorator';
+import { RequirePermissionsGuard } from 'src/auth/require-permissions.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { RolesGuard } from 'src/auth/roles.guard';
+import { Permission } from 'src/enums/permission.enum';
+import { Role } from 'src/enums/role.enum';
+import { ChangePasswordInputModel } from './change-password.input-model';
 import { User } from './user';
 import { UsersService } from './users.service';
 
@@ -34,12 +39,24 @@ export class UsersController {
     return req.user;
   }
 
-  //the order of UseGuards really matters
+  //the order of UseGuards does really matter
   @UseGuards(RolesGuard)
   @UseGuards(JwtAuthGuard)
   @Post('users')
   @Roles(Role.Admin)
   public create(@Body() user: User) {
     this.usersService.create(user);
+  }
+
+  //the order of UseGuards does really matter
+  @UseGuards(RequirePermissionsGuard)
+  @UseGuards(JwtAuthGuard)
+  @RequirePermissions(Permission.EDIT_USER)
+  @Patch('users/changePassword')
+  public changePassword(@Body() inputModel: ChangePasswordInputModel): User {
+    return this.usersService.updatePassword(
+      inputModel.userId,
+      inputModel.password,
+    );
   }
 }

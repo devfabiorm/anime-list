@@ -14,10 +14,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   public async validate(payload: any) {
+    //create a instance of user in Request context
     return {
       userId: payload.sub,
       username: payload.username,
       roles: payload.roles,
+      permissions: payload.permissions,
     };
   }
 }
