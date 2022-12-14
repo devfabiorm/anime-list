@@ -18,6 +18,7 @@ import { Action } from 'src/enums/action.enum';
 import { Article } from './article';
 import { ArticlesService } from './articles.service';
 import { Person } from './person';
+import { ReadArticlePolicyHandler } from './read-article.policy.handler';
 
 @Controller('articles')
 export class ArticlesController {
@@ -42,7 +43,8 @@ export class ArticlesController {
   @Get()
   @UseGuards(PoliciesGuard)
   @UseGuards(JwtAuthGuard)
-  @CheckPolicies((ability: AppAbility) => ability.can(Action.Read, Article))
+  //@CheckPolicies((ability: AppAbility) => ability.can(Action.Read, Article))
+  @CheckPolicies(new ReadArticlePolicyHandler())
   public findAll(): Article[] {
     return this.articlesService.get();
   }
