@@ -44,8 +44,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Post('users')
   @Roles(Role.Admin)
-  public create(@Body() user: User) {
-    this.usersService.create(user);
+  public async create(@Body() user: User): Promise<User> {
+    return this.usersService.create(user);
   }
 
   //the order of UseGuards does really matter

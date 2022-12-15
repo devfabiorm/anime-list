@@ -1,10 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { AuthService } from 'src/auth/auth.service';
 import { Permission } from 'src/enums/permission.enum';
 import { Role } from 'src/enums/role.enum';
 import { User } from './user';
 
 @Injectable()
 export class UsersService {
+  constructor(
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
+  ) {}
+
   private users: User[] = [
     {
       userId: 1,
@@ -25,8 +31,13 @@ export class UsersService {
     return this.users.find((user) => user.username === username);
   }
 
-  public create(user: any): void {
+  public async create(user: User): Promise<User> {
+    user.password = (
+      await this.authService.encrypt(user.password as string)
+    ).toString();
     this.users.push(user);
+
+    return user;
   }
 
   public updatePassword(userId: number, password: string): User {
