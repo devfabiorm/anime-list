@@ -17,6 +17,7 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Permission } from 'src/enums/permission.enum';
 import { Role } from 'src/enums/role.enum';
 import { ChangePasswordInputModel } from './change-password.input-model';
+import { CreateUserDto } from './create-user.dto';
 import { User } from './user';
 import { UsersService } from './users.service';
 
@@ -30,7 +31,7 @@ export class UsersController {
   @UseGuards(LocalAuthGuard)
   @Post('auth/login')
   public async login(@Request() req) {
-    return this.authService.login(req.user);
+    return await this.authService.login(req.user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -44,8 +45,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Post('users')
   @Roles(Role.Admin)
-  public async create(@Body() user: User): Promise<User> {
-    return this.usersService.create(user);
+  public async create(@Body() createUserDto: CreateUserDto): Promise<User> {
+    return await this.usersService.create(createUserDto);
   }
 
   //the order of UseGuards does really matter
@@ -53,10 +54,13 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(Permission.EDIT_USER)
   @Patch('users/changePassword')
-  public changePassword(@Body() inputModel: ChangePasswordInputModel): User {
-    return this.usersService.updatePassword(
+  public async changePassword(
+    @Body() inputModel: ChangePasswordInputModel,
+  ): Promise<User> {
+    return await this.usersService.updatePassword(
       inputModel.userId,
-      inputModel.password,
+      inputModel.oldPassword,
+      inputModel.newPassword,
     );
   }
 }

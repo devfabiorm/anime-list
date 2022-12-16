@@ -1,48 +1,77 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Model } from 'mongoose';
 import { AuthService } from 'src/auth/auth.service';
-import { Permission } from 'src/enums/permission.enum';
-import { Role } from 'src/enums/role.enum';
+import { CreateUserDto } from './create-user.dto';
 import { User } from './user';
 
 @Injectable()
 export class UsersService {
   constructor(
+    @Inject('USER_MODEL')
+    private userModel: Model<User>,
     @Inject(forwardRef(() => AuthService))
-    private readonly authService: AuthService,
+    private authService: AuthService,
   ) {}
 
-  private users: User[] = [
-    {
-      userId: 1,
-      username: 'john',
-      password: 'changeme',
-      roles: [Role.Admin],
-    },
-    {
-      userId: 2,
-      username: 'maria',
-      password: 'guess',
-      roles: [Role.User],
-      permissions: [Permission.EDIT_USER],
-    },
-  ];
-
-  public async findOne(username: string): Promise<User | undefined> {
-    return this.users.find((user) => user.username === username);
+  public async findOne(username: string): Promise<User> {
+    return await this.userModel
+      .findOne<User>({
+        username,
+      })
+      .exec();
   }
 
-  public async create(user: User): Promise<User> {
-    user.password = (
-      await this.authService.encrypt(user.password as string)
-    ).toString();
-    this.users.push(user);
+  public async create(createUserDto: CreateUserDto): Promise<User> {
+    const encryptedData = await this.authService.encrypt(
+      createUserDto.password,
+    );
 
-    return user;
+    const createdUser = new this.userModel({
+      firstName: createUserDto.firstName,
+      lastName: createUserDto.lastName,
+      username: createUserDto.username,
+      email: createUserDto.email,
+      password: encryptedData.data,
+      iv: encryptedData.pattern,
+      roles: createUserDto.roles,
+      permissions: createUserDto.permissions,
+    });
+
+    return createdUser.save();
   }
 
-  public updatePassword(userId: number, password: string): User {
-    const user = this.users.find((user: User) => user.userId === userId);
-    user.password = password;
-    return user;
+  public async findAll(): Promise<User[]> {
+    return this.userModel.find().exec();
+  }
+
+  public async updatePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<User> {
+    const user = await this.userModel.findById(userId).exec();
+
+    if (!user) {
+      return null;
+    }
+
+    const encryptedData = await this.authService.encrypt(oldPassword, user.iv);
+
+    const encryptedDataOfNewPassword = await this.authService.encrypt(
+      newPassword,
+    );
+
+    const updatedUser = await this.userModel.findOneAndUpdate(
+      {
+        _id: userId,
+        password: encryptedData.data,
+      },
+      {
+        password: encryptedDataOfNewPassword.data,
+        iv: encryptedDataOfNewPassword.pattern,
+      },
+    );
+
+    return updatedUser;
   }
 }
