@@ -1,4 +1,5 @@
 export class ChangePasswordInputModel {
-  userId: number;
-  password: string;
+  userId: string;
+  oldPassword: string;
+  newPassword: string;
 }
