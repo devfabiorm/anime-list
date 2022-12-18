@@ -46,7 +46,7 @@ export class UsersController {
   @Post('users')
   @Roles(Role.Admin)
   public async create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return await this.usersService.create(createUserDto);
+    return await this.usersService.createUsingHash(createUserDto);
   }
 
   //the order of UseGuards does really matter

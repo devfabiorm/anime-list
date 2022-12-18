@@ -21,7 +21,9 @@ export class UsersService {
       .exec();
   }
 
-  public async create(createUserDto: CreateUserDto): Promise<User> {
+  public async createUsingEncryption(
+    createUserDto: CreateUserDto,
+  ): Promise<User> {
     const encryptedData = await this.authService.encrypt(
       createUserDto.password,
     );
@@ -33,6 +35,22 @@ export class UsersService {
       email: createUserDto.email,
       password: encryptedData.data,
       iv: encryptedData.pattern,
+      roles: createUserDto.roles,
+      permissions: createUserDto.permissions,
+    });
+
+    return createdUser.save();
+  }
+
+  public async createUsingHash(createUserDto: CreateUserDto): Promise<User> {
+    const hash = await this.authService.hash(createUserDto.password);
+
+    const createdUser = new this.userModel({
+      firstName: createUserDto.firstName,
+      lastName: createUserDto.lastName,
+      username: createUserDto.username,
+      email: createUserDto.email,
+      password: hash,
       roles: createUserDto.roles,
       permissions: createUserDto.permissions,
     });

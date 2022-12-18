@@ -1,11 +1,11 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { User } from 'src/users/user';
 import { Person } from 'src/articles/person';
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { EncryptDto } from 'src/users/encrypt.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -15,10 +15,31 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  public async validateUser(username: string, pass: string): Promise<any> {
+  public async validateUserByEncryption(
+    username: string,
+    pass: string,
+  ): Promise<any> {
     const user = await this.usersService.findOne(username);
 
     if (user && user.password === (await this.encrypt(pass, user.iv)).data) {
+      return {
+        id: user._id,
+        username: user.username,
+        roles: user.roles,
+        permissions: user.permissions,
+      };
+    }
+
+    return null;
+  }
+
+  public async validateUserByHash(
+    username: string,
+    pass: string,
+  ): Promise<any> {
+    const user = await this.usersService.findOne(username);
+
+    if (user && (await bcrypt.compare(pass, user.password))) {
       return {
         id: user._id,
         username: user.username,
@@ -78,7 +99,7 @@ export class AuthService {
     return encrypt;
   }
 
-  private async decrypt(encryptedText: string): Promise<Buffer> {
+  public async decrypt(encryptedText: string): Promise<Buffer> {
     const encryptedTextBuffer = Buffer.from(encryptedText, 'hex');
     const iv = randomBytes(16);
 
@@ -91,5 +112,12 @@ export class AuthService {
     ]);
 
     return decryptedText;
+  }
+
+  public async hash(password: string): Promise<string> {
+    const saltOrRounds = 10;
+    const hash = await bcrypt.hash(password, saltOrRounds);
+
+    return hash;
   }
 }
