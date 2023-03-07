@@ -28,7 +28,7 @@ export class CaslAbilityFactory {
       can(Action.Read, 'all'); // read-only access to everything
     }
 
-    can(Action.Update, Article, { authorId: person.id });
+    can(Action.Update, Article, { author: person });
     cannot(Action.Delete, Article, { isPublished: true });
 
     return build({
